@@ -14,7 +14,7 @@ public class ApiService {
     }
 
     public ApiData callFirstApi(String param) {
-        String url = "https://api1.example.com/endpoint?param=" + param;
+        String url = "https://httpbin.org/get?param=" + param;
         return restTemplate.getForObject(url, ApiData.class);
     }
 
