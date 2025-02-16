@@ -1,4 +1,5 @@
 package org.example.service;
+
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.FirestoreOptions;
@@ -7,8 +8,11 @@ import com.google.firebase.FirebaseOptions;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @Service
 public class FirebaseService {
@@ -17,16 +21,22 @@ public class FirebaseService {
     @PostConstruct
     public void initialize() {
         try {
-            FileInputStream serviceAccount = new FileInputStream("src/main/resources/firebase-credentials.json");
+            // Read the service account file into a byte array
+            byte[] serviceAccountBytes = Files.readAllBytes(Paths.get("src/main/resources/firebase-credentials.json"));
 
+            // Create a single GoogleCredentials instance
+            GoogleCredentials credentials = GoogleCredentials.fromStream(new ByteArrayInputStream(serviceAccountBytes));
+
+            // Initialize Firebase options
             FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .setCredentials(credentials)
                     .build();
 
             FirebaseApp.initializeApp(options);
 
+            // Initialize Firestore options
             FirestoreOptions firestoreOptions = FirestoreOptions.newBuilder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .setCredentials(credentials)
                     .build();
 
             this.firestore = firestoreOptions.getService();
