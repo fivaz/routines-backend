@@ -18,7 +18,6 @@ dependencies {
     // Firebase Admin SDK
     implementation("com.google.firebase:firebase-admin:9.1.1")
 
-
     implementation("org.springframework.boot:spring-boot-starter-security")
 
     // Testing

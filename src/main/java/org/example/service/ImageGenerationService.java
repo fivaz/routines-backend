@@ -9,6 +9,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
@@ -38,6 +39,7 @@ public class ImageGenerationService {
     private final Bucket storageBucket;
     private final FirebaseAuth firebaseAuth;
 
+    @Autowired
     public ImageGenerationService(RestTemplate restTemplate, Firestore firestore,
                                   Bucket storageBucket, FirebaseAuth firebaseAuth) {
         this.restTemplate = restTemplate;

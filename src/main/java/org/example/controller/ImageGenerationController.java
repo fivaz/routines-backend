@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/images")
+@RequestMapping("/generate-image")
 public class ImageGenerationController {
 
     private final ImageGenerationService imageGenerationService;
@@ -14,7 +14,7 @@ public class ImageGenerationController {
         this.imageGenerationService = imageGenerationService;
     }
 
-    @PostMapping("/generate")
+    @PostMapping
     public ResponseEntity<String> generateImage(
             @RequestHeader("Authorization") String authToken,
             @RequestParam String taskId,
@@ -27,9 +27,11 @@ public class ImageGenerationController {
                 authToken.substring(7) : authToken;
 
         // Start async processing
-        imageGenerationService.generateAndStoreImage(token, taskId, routineId, taskName, focus);
+//        imageGenerationService.generateAndStoreImage(token, taskId, routineId, taskName, focus);
+
+        System.out.println(token);
 
         // Return immediately
-        return ResponseEntity.ok("waiting_image");
+        return ResponseEntity.ok("waiting_image1");
     }
 }
