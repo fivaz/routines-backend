@@ -1,24 +1,28 @@
 package org.example.controller;
 
-import org.example.service.ImageGenerationService;
+import org.example.dto.ImageRoutineGenerationRequest;
+import org.example.service.RoutineImageGenerationService;
+import org.example.service.TaskImageGenerationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.example.dto.ImageGenerationRequest;
+import org.example.dto.ImageTaskGenerationRequest;
 
 @RestController
-@RequestMapping("/generate-image")
+@RequestMapping
 public class ImageGenerationController {
 
-    private final ImageGenerationService imageGenerationService;
+    private final TaskImageGenerationService taskImageGenerationService;
+    private final RoutineImageGenerationService routineImageGenerationService;
 
-    public ImageGenerationController(ImageGenerationService imageGenerationService) {
-        this.imageGenerationService = imageGenerationService;
+    public ImageGenerationController(TaskImageGenerationService taskImageGenerationService, RoutineImageGenerationService routineImageGenerationService) {
+        this.taskImageGenerationService = taskImageGenerationService;
+        this.routineImageGenerationService = routineImageGenerationService;
     }
 
-    @PostMapping
-    public ResponseEntity<String> generateImage(
+    @PostMapping("/generate-task-image")
+    public ResponseEntity<String> generateTaskImage(
             @RequestHeader("Authorization") String authToken,
-            @RequestBody ImageGenerationRequest request) {
+            @RequestBody ImageTaskGenerationRequest request) {
 
         // Remove "Bearer " prefix if present
         String token = authToken.startsWith("Bearer ") ?
@@ -31,7 +35,27 @@ public class ImageGenerationController {
         String focus = request.getFocus();
 
         // Start async processing (uncomment the line if necessary)
-         imageGenerationService.generateAndStoreImage(token, taskId, routineId, taskName, focus);
+         taskImageGenerationService.generateAndStoreImage(token, taskId, routineId, taskName, focus);
+
+        // Return immediately
+        return ResponseEntity.ok("waiting_image");
+    }
+
+    @PostMapping("/generate-routine-image")
+    public ResponseEntity<String> generateRoutineImage(
+            @RequestHeader("Authorization") String authToken,
+            @RequestBody ImageRoutineGenerationRequest request) {
+
+        // Remove "Bearer " prefix if present
+        String token = authToken.startsWith("Bearer ") ?
+                authToken.substring(7) : authToken;
+
+        // Access the parameters from the request body
+        String routineId = request.getRoutineId();
+        String routineName = request.getRoutineName();
+
+        // Start async processing (uncomment the line if necessary)
+        routineImageGenerationService.generateAndStoreImage(token, routineId, routineName);
 
         // Return immediately
         return ResponseEntity.ok("waiting_image");

@@ -1,6 +1,6 @@
 package org.example.dto;
 
-public class ImageGenerationRequest {
+public class ImageTaskGenerationRequest {
 
     private String taskId;
     private String routineId;
