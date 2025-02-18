@@ -19,6 +19,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -118,6 +119,19 @@ public class ImageGenerationService {
         return extractPromptFromGeminiResponse(response.getBody());
     }
 
+    private String extractImageUrlFromRecraftResponse(Map response) {
+        try {
+            List<Map<String, Object>> data = (List<Map<String, Object>>) response.get("data");
+            if (data != null && !data.isEmpty()) {
+                Map<String, Object> firstImage = data.get(0);
+                return (String) firstImage.get("url");
+            }
+            throw new RuntimeException("No image URL found in response");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to extract image URL from response: " + e.getMessage());
+        }
+    }
+
     private String generateRecraftImage(String prompt) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -160,14 +174,19 @@ public class ImageGenerationService {
     }
 
     private String extractPromptFromGeminiResponse(Map response) {
-        // Add proper response parsing based on Gemini API response structure
-        // This is a placeholder - implement actual parsing logic
-        return response.toString();
-    }
-
-    private String extractImageUrlFromRecraftResponse(Map response) {
-        // Add proper response parsing based on Recraft API response structure
-        // This is a placeholder - implement actual parsing logic
-        return response.toString();
+        try {
+            List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+            if (candidates != null && !candidates.isEmpty()) {
+                Map<String, Object> firstCandidate = candidates.get(0);
+                Map<String, Object> content = (Map<String, Object>) firstCandidate.get("content");
+                List<Map<String, String>> parts = (List<Map<String, String>>) content.get("parts");
+                if (parts != null && !parts.isEmpty()) {
+                    return parts.get(0).get("text");
+                }
+            }
+            throw new RuntimeException("No text found in Gemini response");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to extract text from Gemini response: " + e.getMessage());
+        }
     }
 }
