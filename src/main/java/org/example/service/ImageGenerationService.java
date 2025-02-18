@@ -3,6 +3,7 @@ package org.example.service;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.Storage;
 import com.google.firebase.FirebaseApp;
@@ -16,8 +17,14 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
+import java.util.concurrent.TimeUnit;
+
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +161,7 @@ public class ImageGenerationService {
     }
 
     private String storeImage(String imageUrl, String storagePath) throws Exception {
+
         // Download image from URL
         URL url = new URL(imageUrl);
         InputStream imageStream = url.openStream();
@@ -161,7 +169,8 @@ public class ImageGenerationService {
         // Upload to Firebase Storage
         Blob blob = storageBucket.create(storagePath, imageStream, "image/jpeg");
 
-        return blob.getMediaLink();
+        return blob.signUrl(365 * 100, TimeUnit.DAYS)
+                .toString();
     }
 
     private void updateFirestore(String userId, String routineId, String taskId, String imageUrl) {

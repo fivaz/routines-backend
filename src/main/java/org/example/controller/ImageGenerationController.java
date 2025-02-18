@@ -30,13 +30,6 @@ public class ImageGenerationController {
         String taskName = request.getTaskName();
         String focus = request.getFocus();
 
-        // Print token and parameters (you can call the service here)
-        System.out.println("Token: " + token);
-        System.out.println("Task ID: " + taskId);
-        System.out.println("Routine ID: " + routineId);
-        System.out.println("Task Name: " + taskName);
-        System.out.println("Focus: " + focus);
-
         // Start async processing (uncomment the line if necessary)
          imageGenerationService.generateAndStoreImage(token, taskId, routineId, taskName, focus);
 
