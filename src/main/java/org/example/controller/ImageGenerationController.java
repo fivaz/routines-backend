@@ -19,6 +19,11 @@ public class ImageGenerationController {
         this.routineImageGenerationService = routineImageGenerationService;
     }
 
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.ok("pong");
+    }
+
     @PostMapping("/generate-task-image")
     public ResponseEntity<String> generateTaskImage(
             @RequestHeader("Authorization") String authToken,
