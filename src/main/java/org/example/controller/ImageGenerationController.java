@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import io.sentry.Sentry;
 import org.example.dto.ImageRoutineGenerationRequest;
 import org.example.service.RoutineImageGenerationService;
 import org.example.service.TaskImageGenerationService;
@@ -19,9 +20,21 @@ public class ImageGenerationController {
         this.routineImageGenerationService = routineImageGenerationService;
     }
 
-    @GetMapping("/ping")
-    public ResponseEntity<String> ping() {
-        return ResponseEntity.ok("pong");
+    @GetMapping("/heath")
+    public ResponseEntity<String> heath() {
+        return ResponseEntity.ok("server is running1");
+    }
+
+    @GetMapping("/error1")
+    public ResponseEntity<String> error1() {
+        try {
+            throw new Exception("This is a test.");
+        } catch (Exception e) {
+            System.err.println("Error processing image generation: " + e.getMessage());
+            Sentry.captureException(e);
+        }
+
+        return ResponseEntity.ok("error1");
     }
 
     @PostMapping("/generate-task-image")
