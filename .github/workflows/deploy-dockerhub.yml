@@ -53,3 +53,9 @@ jobs:
           tags: ${{ env.DOCKER_IMAGE_NAME }}:latest
           build-args: |
             SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Deploy to Render
+        run: |
+          curl -X POST "$RENDER_DEPLOY_HOOK"
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
