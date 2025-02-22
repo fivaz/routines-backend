@@ -20,8 +20,8 @@ public class ImageGenerationController {
         this.routineImageGenerationService = routineImageGenerationService;
     }
 
-    @GetMapping("/heath")
-    public ResponseEntity<String> heath() {
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
         return ResponseEntity.ok("server is running");
     }
 
