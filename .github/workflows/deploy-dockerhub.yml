@@ -9,7 +9,6 @@ jobs:
   build-and-push:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    environment: production  # Use production environment secrets
 
     steps:
       - name: Checkout repository
@@ -21,11 +20,11 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}  # From environment: production
-          password: ${{ secrets.DOCKER_PASSWORD }}  # From environment: production
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Create sentry-auth-token file
-        run: echo "${{ secrets.SENTRY_AUTH_TOKEN }}" > .sentry-auth-token  # From repository secrets
+        run: echo "${{ secrets.SENTRY_AUTH_TOKEN }}" > .sentry-auth-token
 
       - name: Build & Push Docker Image (Linux only)
         uses: docker/build-push-action@v4
@@ -42,7 +41,6 @@ jobs:
   deploy:
     name: Deploy to Render
     runs-on: ubuntu-latest
-    environment: production
     needs: build-and-push
 
     steps:
@@ -50,4 +48,4 @@ jobs:
         run: |
           curl -X POST "$RENDER_DEPLOY_HOOK"
         env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}  # From repository secrets
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
