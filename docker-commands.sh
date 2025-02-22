@@ -17,7 +17,7 @@ build_docker() {
     local tag=$2
 
     echo -e "${BLUE}Building Docker image for platform: ${platform}...${NC}"
-    docker build --platform ${platform} -t ${tag} .
+    docker build --secret id=sentry_token,src=./.sentry-auth-token --platform ${platform} -t ${tag} .
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}Docker image built successfully for ${platform}!${NC}"
