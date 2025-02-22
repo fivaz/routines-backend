@@ -26,7 +26,7 @@ build_docker() {
     fi
 
     echo -e "${BLUE}Building Docker image for platform: ${platform}...${NC}"
-    docker build --secret id=sentry_token,src=./.sentry-auth-token --platform ${platform} -t ${tag} .
+    docker build --build-arg SENTRY_AUTH_TOKEN="$(< .sentry-auth-token)" --platform ${platform} -t ${tag} .
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}Docker image built successfully for ${platform}!${NC}"
@@ -71,11 +71,29 @@ run_docker() {
         ${tag}
 }
 
-# Function to stop and remove all related containers
+# Function to stop, remove all related containers, and remove associated images
 cleanup_docker() {
     echo -e "${BLUE}Cleaning up Docker containers...${NC}"
-    docker stop $(docker ps -a | grep routine-backend | awk '{print $1}') 2>/dev/null
-    docker rm $(docker ps -a | grep routine-backend | awk '{print $1}') 2>/dev/null
+
+    # Stop and remove containers related to routine-backend
+    CONTAINERS=$(docker ps -a | grep routine-backend | awk '{print $1}')
+    if [ -n "$CONTAINERS" ]; then
+        docker stop $CONTAINERS 2>/dev/null
+        docker rm $CONTAINERS 2>/dev/null
+    else
+        echo "No matching containers found."
+    fi
+
+    echo -e "${BLUE}Cleaning up Docker images...${NC}"
+
+    # Find and remove images related to routine-backend
+    IMAGES=$(docker images | grep routine-backend | awk '{print $3}')
+    if [ -n "$IMAGES" ]; then
+        docker rmi $IMAGES 2>/dev/null
+    else
+        echo "No matching images found."
+    fi
+
     echo -e "${GREEN}Cleanup complete!${NC}"
 }
 
