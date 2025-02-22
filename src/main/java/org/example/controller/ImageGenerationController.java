@@ -22,7 +22,7 @@ public class ImageGenerationController {
 
     @GetMapping("/heath")
     public ResponseEntity<String> heath() {
-        return ResponseEntity.ok("server is running1");
+        return ResponseEntity.ok("server is running");
     }
 
     @GetMapping("/error1")
@@ -34,7 +34,7 @@ public class ImageGenerationController {
             Sentry.captureException(e);
         }
 
-        return ResponseEntity.ok("error1");
+        return ResponseEntity.ok("error");
     }
 
     @PostMapping("/generate-task-image")

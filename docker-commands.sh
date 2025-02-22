@@ -16,17 +16,25 @@ build_docker() {
     local platform=$1
     local tag=$2
 
+    # Ensure BuildKit is enabled
+    export DOCKER_BUILDKIT=1
+
+    # Check if the secret file exists
+    if [ ! -f .sentry-auth-token ]; then
+        echo -e "${RED}Error: .sentry-auth-token file not found!${NC}"
+        exit 1
+    fi
+
     echo -e "${BLUE}Building Docker image for platform: ${platform}...${NC}"
     docker build --secret id=sentry_token,src=./.sentry-auth-token --platform ${platform} -t ${tag} .
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}Docker image built successfully for ${platform}!${NC}"
     else
-        echo "Error building Docker image for ${platform}"
+        echo -e "${RED}Error building Docker image for ${platform}.${NC}"
         exit 1
     fi
 }
-
 # Function to build for development (ARM)
 build_dev() {
     build_docker "linux/arm64" "routine-backend:dev"

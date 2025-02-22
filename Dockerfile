@@ -1,9 +1,11 @@
+# Use BuildKit to securely pass SENTRY_AUTH_TOKEN
 FROM gradle:8.6-jdk21 AS build
 WORKDIR /app
 COPY . .
 
-# Mount the secret and set it as an environment variable for Gradle
-RUN --mount=type=secret,id=sentry_token,env=SENTRY_AUTH_TOKEN \
+# Use BuildKit secrets for Sentry authentication
+RUN --mount=type=secret,id=sentry_token \
+    export SENTRY_AUTH_TOKEN=$(cat /run/secrets/sentry_token) && \
     gradle build --no-daemon
 
 FROM openjdk:21-slim
