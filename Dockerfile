@@ -1,12 +1,12 @@
-# Use BuildKit to securely pass SENTRY_AUTH_TOKEN
+# Dockerfile
 FROM gradle:8.6-jdk21 AS build
 WORKDIR /app
 COPY . .
 
-# Use BuildKit secrets for Sentry authentication
-RUN --mount=type=secret,id=sentry_token \
-    export SENTRY_AUTH_TOKEN=$(cat /run/secrets/sentry_token) && \
-    gradle build --no-daemon
+ARG SENTRY_AUTH_TOKEN
+ENV SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
+
+RUN gradle build --no-daemon
 
 FROM openjdk:21-slim
 WORKDIR /app
