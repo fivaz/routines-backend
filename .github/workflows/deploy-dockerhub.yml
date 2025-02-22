@@ -1,53 +1,55 @@
-name: CI/CD Pipeline for Routine Backend
+name: Build and Deploy
 
 on:
   push:
-    branches:
-      - master  # Only trigger when `master` branch is updated
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/routine-backend
 
 jobs:
   build-and-push:
-    name: Build & Push Docker Image
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      # Create necessary secret files
+      - name: Create Sentry token file
+        run: echo "${{ secrets.SENTRY_AUTH_TOKEN }}" > .sentry-auth-token
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+      - name: Create application.properties
+        run: |
+          cat << EOF > src/main/resources/application.properties
+          gemini.api.key=${{ secrets.GEMINI_API_KEY }}
+          recraft.api.key=${{ secrets.RECRAFT_API_KEY }}
+          recraft.style.id=${{ secrets.RECRAFT_STYLE_ID }}
+          firebase.storage.bucket=${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          frontend.url=${{ secrets.FRONTEND_URL }}
+          EOF
+
+      - name: Create Firebase credentials file
+        run: |
+          echo '${{ secrets.FIREBASE_CREDENTIALS_JSON }}' > src/main/resources/firebase-credentials.json
+
+      # Login to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build & Push Docker Image Securely
-        uses: docker/build-push-action@v4
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build and push Docker image
+      - name: Build and push
+        uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
-          platforms: linux/amd64
           push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/routine-backend:latest
+          tags: ${{ env.DOCKER_IMAGE_NAME }}:latest
           secrets: |
-            id=sentry_token,src=/dev/shm/sentry_token
-
-      - name: Deploy to Render
-        run: |
-          curl -X POST "$RENDER_DEPLOY_HOOK"
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-
-  prepare-secret:
-    name: Prepare Secret for Build
-    runs-on: ubuntu-latest
-    environment: production
-    outputs:
-      sentry_secret_path: /dev/shm/sentry_token
-    steps:
-      - name: Create secret file
-        run: |
-          echo "${{ secrets.SENTRY_AUTH_TOKEN }}" > /dev/shm/sentry_token
+            "sentry_token=.sentry-auth-token"
