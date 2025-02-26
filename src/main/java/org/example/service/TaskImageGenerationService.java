@@ -24,23 +24,16 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class TaskImageGenerationService extends ImageGenerationAndStorageService {
 
-    private final FirebaseAuth firebaseAuth;
 
     @Autowired
-    public TaskImageGenerationService(RestTemplate restTemplate, Firestore firestore,
-                                         Bucket storageBucket, FirebaseAuth firebaseAuth) {
+    public TaskImageGenerationService(RestTemplate restTemplate, Firestore firestore, Bucket storageBucket) {
         super(restTemplate, firestore, storageBucket);
-        this.firebaseAuth = firebaseAuth;
     }
 
     @Async
-    public CompletableFuture<Void> generateAndStoreImage(String token, String taskId, String routineId, String taskName, String focus) {
+    public CompletableFuture<Void> generateAndStoreImage(String userId, String taskId, String routineId, String taskName, String focus) {
         return CompletableFuture.runAsync(() -> {
             try {
-                // Verify Firebase token
-                FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
-                String userId = decodedToken.getUid();
-
                 // Generate prompt using Gemini
                 String prompt = generateGeminiPrompt(taskName, focus);
 

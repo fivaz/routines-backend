@@ -23,23 +23,17 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class RoutineImageGenerationService extends ImageGenerationAndStorageService {
 
-    private final FirebaseAuth firebaseAuth;
 
     @Autowired
     public RoutineImageGenerationService(RestTemplate restTemplate, Firestore firestore,
-                                         Bucket storageBucket, FirebaseAuth firebaseAuth) {
+                                         Bucket storageBucket) {
         super(restTemplate, firestore, storageBucket);
-        this.firebaseAuth = firebaseAuth;
     }
 
     @Async
-    public CompletableFuture<Void> generateAndStoreImage(String token, String routineId, String routineName) {
+    public CompletableFuture<Void> generateAndStoreImage(String userId, String routineId, String routineName) {
         return CompletableFuture.runAsync(() -> {
             try {
-                // Verify Firebase token
-                FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
-                String userId = decodedToken.getUid();
-
                 // Generate prompt using Gemini
                 String prompt = generateGeminiPrompt(routineName);
 
@@ -70,7 +64,7 @@ public class RoutineImageGenerationService extends ImageGenerationAndStorageServ
                         "- Emphasize body language and facial expressions that convey enjoyment, focus, or relaxation. " +
                         "- Describe the environment in a way that makes the scene feel pleasant, warm, or inspiring. " +
                         "- Keep the description under 1000 characters. " +
-                        "Task: \"" + taskName + "\" Image Description:" ;
+                        "Task: \"" + taskName + "\" Image Description:";
 
 
         HttpHeaders headers = new HttpHeaders();

@@ -5,6 +5,8 @@ import org.example.dto.ImageRoutineGenerationRequest;
 import org.example.service.RoutineImageGenerationService;
 import org.example.service.TaskImageGenerationService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.example.dto.ImageTaskGenerationRequest;
 
@@ -20,13 +22,13 @@ public class ImageGenerationController {
         this.routineImageGenerationService = routineImageGenerationService;
     }
 
-    @GetMapping("/health")
+    @GetMapping("/public/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("server is running");
     }
 
-    @GetMapping("/error1")
-    public ResponseEntity<String> error1() {
+    @GetMapping("/public/error")
+    public ResponseEntity<String> error() {
         try {
             throw new Exception("This is a test.");
         } catch (Exception e) {
@@ -38,13 +40,13 @@ public class ImageGenerationController {
     }
 
     @PostMapping("/generate-task-image")
-    public ResponseEntity<String> generateTaskImage(
-            @RequestHeader("Authorization") String authToken,
-            @RequestBody ImageTaskGenerationRequest request) {
+    public ResponseEntity<String> generateTaskImage(@RequestBody ImageTaskGenerationRequest request) {
 
-        // Remove "Bearer " prefix if present
-        String token = authToken.startsWith("Bearer ") ?
-                authToken.substring(7) : authToken;
+        // Get the current authentication from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // The principal (user ID) is set during token validation in the filter
+        String userId = (String) authentication.getPrincipal();
 
         // Access the parameters from the request body
         String taskId = request.getTaskId();
@@ -53,7 +55,7 @@ public class ImageGenerationController {
         String focus = request.getFocus();
 
         // Start async processing (uncomment the line if necessary)
-         taskImageGenerationService.generateAndStoreImage(token, taskId, routineId, taskName, focus);
+         taskImageGenerationService.generateAndStoreImage(userId, taskId, routineId, taskName, focus);
 
         // Return immediately
         return ResponseEntity.ok("waiting_image");
@@ -61,19 +63,20 @@ public class ImageGenerationController {
 
     @PostMapping("/generate-routine-image")
     public ResponseEntity<String> generateRoutineImage(
-            @RequestHeader("Authorization") String authToken,
             @RequestBody ImageRoutineGenerationRequest request) {
 
-        // Remove "Bearer " prefix if present
-        String token = authToken.startsWith("Bearer ") ?
-                authToken.substring(7) : authToken;
+        // Get the current authentication from security context
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // The principal (user ID) is set during token validation in the filter
+        String userId = (String) authentication.getPrincipal();
 
         // Access the parameters from the request body
         String routineId = request.getRoutineId();
         String routineName = request.getRoutineName();
 
         // Start async processing (uncomment the line if necessary)
-        routineImageGenerationService.generateAndStoreImage(token, routineId, routineName);
+        routineImageGenerationService.generateAndStoreImage(userId, routineId, routineName);
 
         // Return immediately
         return ResponseEntity.ok("waiting_image");
