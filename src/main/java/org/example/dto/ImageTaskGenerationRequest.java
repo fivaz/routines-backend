@@ -1,10 +1,15 @@
 package org.example.dto;
 
-public class ImageTaskGenerationRequest {
+import jakarta.validation.constraints.NotNull;
 
+public class ImageTaskGenerationRequest {
+    @NotNull
     private String taskId;
+    @NotNull
     private String routineId;
+    @NotNull
     private String taskName;
+    @NotNull
     private String focus;
 
     // Getters and Setters

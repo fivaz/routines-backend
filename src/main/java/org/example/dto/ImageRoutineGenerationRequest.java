@@ -1,8 +1,12 @@
 package org.example.dto;
 
+import jakarta.validation.constraints.NotNull;
+
 public class ImageRoutineGenerationRequest {
 
+    @NotNull
     private String routineId;
+    @NotNull
     private String routineName;
 
     // Getters and Setters

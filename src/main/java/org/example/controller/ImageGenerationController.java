@@ -23,12 +23,12 @@ public class ImageGenerationController {
         this.routineImageGenerationService = routineImageGenerationService;
     }
 
-    @GetMapping("/public/health")
+    @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("server is running");
     }
 
-    @GetMapping("/public/error")
+    @GetMapping("/sentry")
     public ResponseEntity<String> error() {
         try {
             throw new Exception("This is a test.");

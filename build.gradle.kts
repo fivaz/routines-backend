@@ -23,9 +23,13 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
 
     // Firebase Admin SDK
-    implementation("com.google.firebase:firebase-admin:9.1.1")
+    implementation("com.google.firebase:firebase-admin:9.4.3")
 
     implementation("org.springframework.boot:spring-boot-starter-security")
+
+    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
+
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
 //    implementation("org.springframework.security:spring-security-core:6.4.3")
     // Testing
