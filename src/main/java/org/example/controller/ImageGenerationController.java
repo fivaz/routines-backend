@@ -4,6 +4,7 @@ import io.sentry.Sentry;
 import org.example.dto.ImageRoutineGenerationRequest;
 import org.example.service.RoutineImageGenerationService;
 import org.example.service.TaskImageGenerationService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -80,5 +81,15 @@ public class ImageGenerationController {
 
         // Return immediately
         return ResponseEntity.ok("waiting_image");
+    }
+}
+
+@ControllerAdvice
+class GlobalExceptionHandler {
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleException(Exception e) {
+        System.err.println("Unexpected error: " + e.getMessage());
+//        Sentry.captureException(e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred");
     }
 }
