@@ -1,38 +1,31 @@
 package org.example.service;
 
 import com.google.cloud.firestore.Firestore;
-import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseToken;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.io.InputStream;
-import java.net.URL;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class RoutineImageGenerationService extends ImageGenerationAndStorageService {
 
-
     @Autowired
-    public RoutineImageGenerationService(RestTemplate restTemplate, Firestore firestore,
+    public RoutineImageGenerationService(WebClient webClient, Firestore firestore,
                                          Bucket storageBucket) {
-        super(restTemplate, firestore, storageBucket);
+        super(webClient, firestore, storageBucket);
     }
 
     @Async
-    public CompletableFuture<Void> generateAndStoreImage(String userId, String routineId, String routineName) {
-        return CompletableFuture.runAsync(() -> {
+    public void generateAndStoreImage(String userId, String routineId, String routineName) {
+        String path = String.format("users/%s/routines/%s", userId, routineId);
+
+        CompletableFuture.runAsync(() -> {
             try {
                 // Generate prompt using Gemini
                 String prompt = generateGeminiPrompt(routineName);
@@ -41,8 +34,6 @@ public class RoutineImageGenerationService extends ImageGenerationAndStorageServ
                 String imageUrl = generateRecraftImage(prompt);
 
                 // Download and store image in Firebase Storage
-                String path = String.format("users/%s/routines/%s", userId, routineId);
-
                 String imageStorageUrl = storeImage(imageUrl, path);
 
                 // Update Firestore
@@ -51,6 +42,8 @@ public class RoutineImageGenerationService extends ImageGenerationAndStorageServ
             } catch (Exception e) {
                 // Log error but don't throw it since this is async
                 System.err.println("Error processing image generation: " + e.getMessage());
+
+                updateFirestore(path, "error");
             }
         });
     }
@@ -66,10 +59,6 @@ public class RoutineImageGenerationService extends ImageGenerationAndStorageServ
                         "- Keep the description under 1000 characters. " +
                         "Task: \"" + taskName + "\" Image Description:";
 
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
         Map<String, Object> requestBody = new HashMap<>();
         Map<String, Object> content = new HashMap<>();
         Map<String, String> part = new HashMap<>();
@@ -77,16 +66,15 @@ public class RoutineImageGenerationService extends ImageGenerationAndStorageServ
         content.put("parts", new Object[]{part});
         requestBody.put("contents", new Object[]{content});
 
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
-
-        ResponseEntity<Map> response = restTemplate.exchange(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + geminiApiKey,
-                HttpMethod.POST,
-                request,
-                Map.class
-        );
+        Map responseBody = webClient.post()
+                .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + geminiApiKey)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
 
         // Extract prompt from Gemini response
-        return extractPromptFromGeminiResponse(response.getBody());
+        return extractPromptFromGeminiResponse(responseBody);
     }
 }

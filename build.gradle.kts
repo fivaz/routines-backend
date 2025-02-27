@@ -31,7 +31,10 @@ dependencies {
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
-//    implementation("org.springframework.security:spring-security-core:6.4.3")
+    implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.3")
+
+    runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.1.118.Final:osx-aarch_64")
+
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))

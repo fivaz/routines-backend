@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Service
 public class ImageGenerationAndStorageService {
@@ -32,14 +36,16 @@ public class ImageGenerationAndStorageService {
     @Value("${recraft.style.id}")
     String styleId;
 
-    final RestTemplate restTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(ImageGenerationAndStorageService.class);
+
+    final WebClient webClient;
     private final Firestore firestore;
     private final Bucket storageBucket;
 
     @Autowired
-    public ImageGenerationAndStorageService(RestTemplate restTemplate, Firestore firestore,
+    public ImageGenerationAndStorageService(WebClient restTemplate, Firestore firestore,
                                             Bucket storageBucket) {
-        this.restTemplate = restTemplate;
+        this.webClient = restTemplate;
         this.firestore = firestore;
         this.storageBucket = storageBucket;
     }
@@ -58,24 +64,26 @@ public class ImageGenerationAndStorageService {
     }
 
     String generateRecraftImage(String prompt) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "Bearer " + recraftApiKey);
-
         Map<String, String> requestBody = new HashMap<>();
         requestBody.put("prompt", prompt);
         requestBody.put("style_id", styleId);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+        try {
+            Map responseBody = webClient.post()
+                    .uri("https://external.api.recraft.ai/v1/images/generations")
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + recraftApiKey)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
 
-        ResponseEntity<Map> response = restTemplate.exchange(
-                "https://external.api.recraft.ai/v1/images/generations",
-                HttpMethod.POST,
-                request,
-                Map.class
-        );
+            return extractImageUrlFromRecraftResponse(responseBody);
 
-        return extractImageUrlFromRecraftResponse(response.getBody());
+        } catch (WebClientResponseException e) {
+            logger.error("Gemini API error: Status={}, Response Body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new RuntimeException("Failed to generate prompt from Gemini API: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+        }
     }
 
     String storeImage(String imageUrl, String storagePath) throws Exception {

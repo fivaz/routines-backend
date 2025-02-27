@@ -11,6 +11,7 @@ import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.concurrent.TimeUnit;
 
@@ -26,13 +27,15 @@ public class TaskImageGenerationService extends ImageGenerationAndStorageService
 
 
     @Autowired
-    public TaskImageGenerationService(RestTemplate restTemplate, Firestore firestore, Bucket storageBucket) {
-        super(restTemplate, firestore, storageBucket);
+    public TaskImageGenerationService(WebClient webClient, Firestore firestore, Bucket storageBucket) {
+        super(webClient, firestore, storageBucket);
     }
 
     @Async
-    public CompletableFuture<Void> generateAndStoreImage(String userId, String taskId, String routineId, String taskName, String focus) {
-        return CompletableFuture.runAsync(() -> {
+    public void generateAndStoreImage(String userId, String taskId, String routineId, String taskName, String focus) {
+        String path = String.format("users/%s/routines/%s/tasks/%s", userId, routineId, taskId);
+
+        CompletableFuture.runAsync(() -> {
             try {
                 // Generate prompt using Gemini
                 String prompt = generateGeminiPrompt(taskName, focus);
@@ -41,8 +44,6 @@ public class TaskImageGenerationService extends ImageGenerationAndStorageService
                 String imageUrl = generateRecraftImage(prompt);
 
                 // Download and store image in Firebase Storage
-                String path = String.format("users/%s/routines/%s/tasks/%s", userId, routineId, taskId);
-
                 String imageStorageUrl = storeImage(imageUrl, path);
 
                 // Update Firestore
@@ -51,6 +52,8 @@ public class TaskImageGenerationService extends ImageGenerationAndStorageService
             } catch (Exception e) {
                 // Log error but don't throw it since this is async
                 System.err.println("Error processing image generation: " + e.getMessage());
+
+                updateFirestore(path, "error");
             }
         });
     }
@@ -85,14 +88,15 @@ public class TaskImageGenerationService extends ImageGenerationAndStorageService
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<Map> response = restTemplate.exchange(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + geminiApiKey,
-                HttpMethod.POST,
-                request,
-                Map.class
-        );
+        Map responseBody = webClient.post()
+                .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + geminiApiKey)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
 
         // Extract prompt from Gemini response
-        return extractPromptFromGeminiResponse(response.getBody());
+        return extractPromptFromGeminiResponse(responseBody);
     }
 }
