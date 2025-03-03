@@ -36,7 +36,7 @@ public class ImageGenerationAndStorageService {
     @Value("${recraft.style.id}")
     String styleId;
 
-    private static final Logger logger = LoggerFactory.getLogger(ImageGenerationAndStorageService.class);
+    static final Logger logger = LoggerFactory.getLogger(ImageGenerationAndStorageService.class);
 
     final WebClient webClient;
     private final Firestore firestore;

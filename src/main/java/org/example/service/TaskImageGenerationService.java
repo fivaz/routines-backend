@@ -5,6 +5,10 @@ import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
+import org.example.response.RecraftApiException;
+import org.example.response.RecraftAuthenticationException;
+import org.example.response.RecraftRateLimitException;
+import org.example.response.UserStatusResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -12,6 +16,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.TimeUnit;
 
@@ -98,5 +104,47 @@ public class TaskImageGenerationService extends ImageGenerationAndStorageService
 
         // Extract prompt from Gemini response
         return extractPromptFromGeminiResponse(responseBody);
+    }
+
+
+    /**
+     * Fetches the current user status from Recraft API
+     * @return UserStatusResponse containing user information and credits
+     */
+    public Mono<UserStatusResponse> getUserStatus() {
+        return webClient.get()
+                .uri("https://external.api.recraft.ai/v1/users/me")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + recraftApiKey)
+                .retrieve()
+                .bodyToMono(UserStatusResponse.class)
+                .onErrorResume(WebClientResponseException.class, ex -> {
+                    if (ex.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                        return Mono.error(new RecraftAuthenticationException("Invalid Recraft API token"));
+                    } else if (ex.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                        return Mono.error(new RecraftRateLimitException("Rate limit exceeded"));
+                    } else {
+                        return Mono.error(new RecraftApiException("Error calling Recraft API: " + ex.getMessage()));
+                    }
+                })
+                .onErrorResume(Exception.class, ex ->
+                        Mono.error(new RecraftApiException("Unexpected error in getUserStatus: " + ex.getMessage()))
+                );
+    }
+
+    /**
+     * Fetches the user's credit count from Recraft API
+     * @return Mono<Integer> containing the credit count
+     */
+    public Mono<Integer> getUserCredits() {
+        return getUserStatus()
+                .map(UserStatusResponse::getCredits)
+                .doOnError(ex -> logger.error("Error fetching user credits: {}", ex.getMessage())) // Log errors
+                .onErrorMap(ex -> {
+                    // Wrap unexpected exceptions, but pass through RecraftApiException subclasses
+                    if (!(ex instanceof RecraftApiException)) {
+                        return new RecraftApiException("Error fetching user credits: " + ex.getMessage());
+                    }
+                    return ex; // Propagate RecraftApiException as-is
+                });
     }
 }

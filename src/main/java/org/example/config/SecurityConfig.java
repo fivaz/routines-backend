@@ -36,7 +36,10 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         // Existing public endpoint
                         .requestMatchers("/health").permitAll()
-                        .anyRequest().authenticated()
+                        // Require authentication for all /protected/** routes
+                        .requestMatchers("/protected/**").authenticated()
+                        // Permit all other requests
+                        .anyRequest().permitAll()
                 );
 
         return http.build();

@@ -27,6 +27,7 @@ jobs:
           recraft.style.id=${{ secrets.RECRAFT_STYLE_ID }}
           firebase.storage.bucket=${{ secrets.FIREBASE_STORAGE_BUCKET }}
           frontend.url=${{ secrets.FRONTEND_URL }}
+          spring.profiles.active=prod
           EOF
 
       - name: Create Firebase credentials file

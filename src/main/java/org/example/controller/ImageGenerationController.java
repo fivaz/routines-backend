@@ -2,14 +2,24 @@ package org.example.controller;
 
 import io.sentry.Sentry;
 import org.example.dto.ImageRoutineGenerationRequest;
+import org.example.response.RecraftApiException;
+import org.example.response.RecraftAuthenticationException;
+import org.example.response.RecraftRateLimitException;
 import org.example.service.RoutineImageGenerationService;
 import org.example.service.TaskImageGenerationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.example.dto.ImageTaskGenerationRequest;
+import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping
@@ -40,7 +50,32 @@ public class ImageGenerationController {
         return ResponseEntity.ok("error");
     }
 
-    @PostMapping("/generate-task-image")
+    @GetMapping("/credits")
+    public Mono<ResponseEntity<Map<String, Object>>> getRecraftCredits() {
+        return taskImageGenerationService.getUserCredits()
+                .map(credits -> {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("credits", credits);
+                    return ResponseEntity.ok(response);
+                })
+                .onErrorResume(RecraftApiException.class, ex -> {
+                    Map<String, Object> errorResponse = new HashMap<>();
+                    errorResponse.put("error", ex.getMessage());
+
+                    HttpStatus statusCode;
+                    if (ex instanceof RecraftAuthenticationException) {
+                        statusCode = HttpStatus.UNAUTHORIZED; // 401
+                    } else if (ex instanceof RecraftRateLimitException) {
+                        statusCode = HttpStatus.TOO_MANY_REQUESTS; // 429
+                    } else {
+                        statusCode = HttpStatus.INTERNAL_SERVER_ERROR; // 500
+                    }
+
+                    return Mono.just(ResponseEntity.status(statusCode).body(errorResponse));
+                });
+    }
+
+    @PostMapping("/protected/generate-task-image")
     public ResponseEntity<String> generateTaskImage(@RequestBody ImageTaskGenerationRequest request) {
 
         // Get the current authentication from security context
@@ -62,7 +97,7 @@ public class ImageGenerationController {
         return ResponseEntity.ok("waiting_image");
     }
 
-    @PostMapping("/generate-routine-image")
+    @PostMapping("/protected/generate-routine-image")
     public ResponseEntity<String> generateRoutineImage(
             @RequestBody ImageRoutineGenerationRequest request) {
 
@@ -86,10 +121,27 @@ public class ImageGenerationController {
 
 @ControllerAdvice
 class GlobalExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    private final boolean isSentryEnabled;
+
+    public GlobalExceptionHandler(@Value("${sentry.enabled:false}") boolean isSentryEnabled) {
+        this.isSentryEnabled = isSentryEnabled;
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleException(Exception e) {
-        System.err.println("Unexpected error: " + e.getMessage());
-//        Sentry.captureException(e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred");
+    public ResponseEntity<Map<String, Object>> handleUnexpectedException(Exception e) {
+        logger.error("Unexpected error occurred: {}", e.getMessage(), e);
+
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("error", "An unexpected error occurred");
+        errorResponse.put("details", e.getMessage()); // Optional: expose details in dev, hide in prod
+
+        if (isSentryEnabled) {
+            Sentry.captureException(e);
+        }
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }
