@@ -21,13 +21,10 @@ jobs:
 
       - name: Create application.properties
         run: |
-          cat << EOF > src/main/resources/application.properties
+          cat << EOF > src/main/resources/secrets.properties
           gemini.api.key=${{ secrets.GEMINI_API_KEY }}
           recraft.api.key=${{ secrets.RECRAFT_API_KEY }}
-          recraft.style.id=${{ secrets.RECRAFT_STYLE_ID }}
           firebase.storage.bucket=${{ secrets.FIREBASE_STORAGE_BUCKET }}
-          frontend.url=${{ secrets.FRONTEND_URL }}
-          spring.profiles.active=prod
           EOF
 
       - name: Create Firebase credentials file
