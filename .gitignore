@@ -42,6 +42,5 @@ bin/
 .DS_Store
 
 ### Secrets ###
-src/main/resources/application.properties
 src/main/resources/firebase-credentials.json
 .sentry-auth-token
