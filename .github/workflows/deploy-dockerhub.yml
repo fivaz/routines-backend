@@ -25,6 +25,7 @@ jobs:
           gemini.api.key=${{ secrets.GEMINI_API_KEY }}
           recraft.api.key=${{ secrets.RECRAFT_API_KEY }}
           firebase.storage.bucket=${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          sentry.enabled=true
           EOF
 
       - name: Create Firebase credentials file
