@@ -49,7 +49,7 @@ sentry {
     includeSourceContext = true
 
     org = "fivaz-lb"
-    projectName = "java-spring"
+    projectName = "routine-backend"
     authToken = System.getenv("SENTRY_AUTH_TOKEN")
 }
 
