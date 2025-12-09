@@ -59,7 +59,7 @@ public class SecurityConfig {
 
                     try {
                         // Verify the token
-                        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(token);
+                        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifySessionCookie(token);
 
                         // Extract user ID
                         String userId = decodedToken.getUid();

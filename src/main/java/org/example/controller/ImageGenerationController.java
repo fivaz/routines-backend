@@ -90,8 +90,8 @@ public class ImageGenerationController {
         String taskName = request.getTaskName();
         String focus = request.getFocus();
 
-        // Start async processing (uncomment the line if necessary)
-         taskImageGenerationService.generateAndStoreImage(userId, taskId, routineId, taskName, focus);
+        // Start async processing
+        taskImageGenerationService.generateAndStoreImage(userId, taskId, routineId, taskName, focus);
 
         // Return immediately
         return ResponseEntity.ok("waiting_image");
