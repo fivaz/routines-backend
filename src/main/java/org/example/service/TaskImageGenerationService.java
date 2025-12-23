@@ -19,6 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 import java.io.InputStream;
@@ -56,10 +57,17 @@ public class TaskImageGenerationService extends ImageGenerationAndStorageService
                 updateFirestore(path, imageStorageUrl);
 
             } catch (Exception e) {
-                // Log error but don't throw it since this is async
-                System.err.println("Error processing image generation: " + e.getMessage());
+                String errorMessage = String.format(
+                        "Error generating image for user=%s, task=%s, routine=%s: %s",
+                        userId, taskId, routineId, e.getMessage()
+                );
 
-                updateFirestore(path, "error");
+                // Print for debugging
+                System.err.println(errorMessage);
+                e.printStackTrace();
+
+                // Update Firestore with error
+                updateFirestore(path, errorMessage);
             }
         });
     }

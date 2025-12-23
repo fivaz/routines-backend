@@ -97,6 +97,33 @@ cleanup_docker() {
     echo -e "${GREEN}Cleanup complete!${NC}"
 }
 
+# Function to restart (rebuild + rerun) without removing images
+restart_docker() {
+    local platform=$1
+    local tag=$2
+    local container_name=$3
+
+    echo -e "${BLUE}Restarting Docker container: ${container_name}...${NC}"
+
+    # Stop & remove container if it exists
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container_name}$"; then
+        docker stop ${container_name} 2>/dev/null
+        docker rm ${container_name} 2>/dev/null
+    fi
+
+    # Rebuild image (same name & tag)
+    build_docker "${platform}" "${tag}"
+
+    # Run container again
+    docker run \
+        --name ${container_name} \
+        -p 8080:8080 \
+        -e GCP_PROJECT_ID=${GCP_PROJECT_ID:-default-project-id} \
+        ${tag}
+
+    echo -e "${GREEN}Restart complete for ${container_name}!${NC}"
+}
+
 # Parse command line arguments
 case "$1" in
     "build-dev")
@@ -128,6 +155,12 @@ case "$1" in
         build_prod
         run_docker "routine-backend:latest"
         ;;
+    "restart-dev")
+        restart_docker "linux/arm64" "routine-backend:dev" "routine-backend-dev"
+        ;;
+    "restart-prod")
+        restart_docker "linux/amd64" "routine-backend:latest" "routine-backend-prod"
+        ;;
     *)
         echo "Usage: $0 {build-dev|build-prod|push-prod|run-dev|run-prod|cleanup|all-dev|all-prod}"
         echo "  build-dev   - Build the Docker image for development (ARM)"
@@ -138,6 +171,8 @@ case "$1" in
         echo "  cleanup     - Stop and remove existing containers"
         echo "  all-dev     - Cleanup, build for development, and run"
         echo "  all-prod    - Cleanup, build for production, and run"
+        echo "  restart-dev - Rebuild and restart dev container (no image cleanup)"
+        echo "  restart-prod - Rebuild and restart prod container (no image cleanup)"
         exit 1
         ;;
 esac
