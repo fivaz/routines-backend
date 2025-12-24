@@ -8,8 +8,8 @@ ENV SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}
 
 RUN gradle build --no-daemon
 
-# Stage 2: Runtime
-FROM eclipse-temurin:21-jre-alpine-3.23
+# Stage 2: Runtime (glibc-based to avoid native crash)
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 # Copy the built jar
@@ -24,4 +24,4 @@ EXPOSE 8080
 ENV JAVA_OPTS="-javaagent:/app/sentry-opentelemetry-agent-8.2.0.jar"
 
 # Entry point
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
