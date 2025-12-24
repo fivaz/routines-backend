@@ -23,5 +23,9 @@ EXPOSE 8080
 # Set Java options
 ENV JAVA_OPTS="-javaagent:/app/sentry-opentelemetry-agent-8.2.0.jar"
 
+ENV OTEL_TRACES_EXPORTER=none
+ENV OTEL_METRICS_EXPORTER=none
+ENV OTEL_LOGS_EXPORTER=none
+
 # Entry point
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
