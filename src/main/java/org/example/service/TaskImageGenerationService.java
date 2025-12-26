@@ -64,7 +64,6 @@ public class TaskImageGenerationService extends ImageGenerationAndStorageService
 
                 // Print for debugging
                 System.err.println(errorMessage);
-                e.printStackTrace();
 
                 // Update Firestore with error
                 updateFirestore(path, errorMessage);
