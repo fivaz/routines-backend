@@ -27,6 +27,7 @@ public class ImageGenerationController {
 
     private final TaskImageGenerationService taskImageGenerationService;
     private final RoutineImageGenerationService routineImageGenerationService;
+    private static final Logger logger = LoggerFactory.getLogger(ImageGenerationController.class);
 
     public ImageGenerationController(TaskImageGenerationService taskImageGenerationService, RoutineImageGenerationService routineImageGenerationService) {
         this.taskImageGenerationService = taskImageGenerationService;

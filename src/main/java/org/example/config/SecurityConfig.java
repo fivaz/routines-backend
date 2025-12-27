@@ -3,6 +3,8 @@ package org.example.config;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,6 +27,8 @@ import java.util.Collections;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -73,9 +77,21 @@ public class SecurityConfig {
                         SecurityContextHolder.getContext().setAuthentication(authentication);
 
                     } catch (FirebaseAuthException e) {
-                        // Token is invalid
-                        SecurityContextHolder.clearContext();
+                        logger.error("Firebase authentication failed: ",e);
+                        // Token invalid
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"Invalid or expired token\"}");
+                        return; // Stop filter chain
                     }
+                } else if (request.getRequestURI().startsWith("/protected/")) {
+                    logger.warn("Missing Authorization header for protected endpoint" + request.getRequestURI());
+
+                    // Missing token for protected endpoint
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"Missing token\"}");
+                    return; // Stop filter chain
                 }
 
                 filterChain.doFilter(request, response);

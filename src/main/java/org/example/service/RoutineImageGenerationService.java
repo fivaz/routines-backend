@@ -2,6 +2,8 @@ package org.example.service;
 
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.storage.Bucket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
@@ -14,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 
 @Service
 public class RoutineImageGenerationService extends ImageGenerationAndStorageService {
+    private static final Logger logger = LoggerFactory.getLogger(RoutineImageGenerationService.class);
 
     @Autowired
     public RoutineImageGenerationService(WebClient webClient, Firestore firestore,
